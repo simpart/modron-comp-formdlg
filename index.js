@@ -5,7 +5,7 @@
 let mf = require('mofron');
 let Text = require('mofron-comp-text');
 let Dialog = require('mofron-comp-dialog');
-let efCenter = require('mofron-effect-center');
+let Form = require('mofron-comp-form');
 
 /**
  * @class mofron.comp.FormDlg
@@ -37,43 +37,45 @@ mf.comp.FormDlg = class extends Dialog {
     initDomConts (prm) {
         try {
             super.initDomConts();
-            this.height(null);
-            this.getFrame().child()[1].style({
-                'z-index' : '100'
-            });
+            this.autoClose(false);
             
-            /* set form area */
-            let fm = new mf.Component({
-                width : '100%'
-            });
-            this.addChild(fm);
-            this.target(fm.target());
+            let form = new Form({});
+            form.submitComp().visible(false);
             
-            this.form(prm);
+            this.addChild(form);
+            this.target(form.target());
+            //
+            //this.height(null);
+            //this.getFrame().child()[1].style({
+            //    'z-index' : '100'
+            //});
+            //
+            ///* set form area */
+            //let fm = new mf.Component({
+            //    width : '100%'
+            //});
+            //this.addChild(fm);
+            //this.target(fm.target());
+            //
+            //this.form(prm);
         } catch (e) {
             console.error(e.stack);
             throw e;
         }
     }
     
-    form (prm) {
+    formOpt (opt) {
         try {
-            if (undefined === prm) {
-                /* getter */
-                return (0 === this.child().length) ? null : this.child()[0];
-            }
-            /* setter */
-            if (true !== mf.func.isInclude(prm, 'Form')) {
-                throw new Error('invalid parameter');
-            }
-            prm.submitComp().parent().style({
-                'z-index' : '90'
-            });
-            prm.submitComp().visible(false);
-            prm.child()[prm.child().length-1].style({
-                'padding-bottom' : '40px'
-            });
-            this.addChild(prm);
+            this.getForm().execOption(opt);
+        } catch (e) {
+            console.error(e.stack);
+            throw e;
+        }
+    }
+    
+    getForm () {
+        try {
+            return this.target().component();
         } catch (e) {
             console.error(e.stack);
             throw e;
@@ -87,11 +89,23 @@ mf.comp.FormDlg = class extends Dialog {
                 this.button()[0].clickEvent(
                     (btn, dlg) => {
                         try {
-                            if (null !== dlg.form()) {
-                                let snd_ret = dlg.form().send();
-                                if (null !== snd_ret) {
-                                    dlg.form().message(snd_ret['cause']);
+                            let chk = dlg.getForm().send();
+                            let msg = (null !== dlg.getForm().message()) ? true : false;
+                            if (null !== chk) {
+                                dlg.getForm().message(chk.cause);
+                                if (true === msg) {
+                                    let msg_hei = dlg.getForm().message().height();
+                                    let mgn_top = dlg.getForm().getConfig('layout', 'Margin').value();
+                                    dlg.height(
+                                        dlg.height() + msg_hei + mgn_top
+                                    );
                                 }
+                            } else {
+                                dlg.getForm().message(null);
+                                if (true === msg) {
+                                    dlg.height(dlg.height() - dlg.getForm().message().height());
+                                }
+                                dlg.visible(false);
                             }
                         } catch (e) {
                             console.error(e.stack);
